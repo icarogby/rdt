@@ -1,15 +1,16 @@
 import socket
 from threading import Thread
 
-# todo fazer somente socket servidor
 host = socket.gethostbyname(socket.gethostname())
 port = 5000
-print(f"Host: {host} | Port: {port}")
 
 skt = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # AF_INET = IPV4 | SOCK_DGRAM = UDP
 skt.bind((host, port))
 
+print(f"Host: {host} | Port: {port}")
+
 opc = 1
+
 def menu():
     global opc
 
@@ -23,7 +24,7 @@ def menu():
 
         opc = int(input("O que deseja fazer com o pacote: "))
 
-def baguncinha(opc, data, addr):
+def sim(opc, data, addr):
     global skt
 
     if opc == 1:
@@ -51,7 +52,7 @@ def gate():
         data, addr = skt.recvfrom(1024) # receive data and client address
         print(addr)
 
-        baguncinha(opc, data, addr)
+        sim(opc, data, addr)
 
         print(f": Received data: {data.decode()}")
 
