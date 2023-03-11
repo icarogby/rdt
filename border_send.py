@@ -1,29 +1,35 @@
-import socket
-from threading import Thread, Lock
+from socket import socket, AF_INET, SOCK_DGRAM, gethostbyname, gethostname
 from time import sleep
+from threading import Thread, Lock
 
-core_ip = socket.gethostbyname(socket.gethostname()) # todo change to input("Enter ip of network: ")
-my_ip = socket.gethostbyname(socket.gethostname()) # todo change to get a input or gambiarra
+core_ip = gethostbyname(gethostname()) # todo change to input("Enter ip of network: ")
+my_ip = gethostbyname(gethostname()) # todo change to get a input or gambiarra
 addressee_ip = input("Enter ip of addressee: ")
 
 serial_number = 0
 
 critical = Lock()
-
 with critical:
     ack = False
 
-skt = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # AF_INET = IPV4 | SOCK_DGRAM = UDP
-skt.bind((my_ip, 6000)) # todo change to 5000 port
+skt = socket(AF_INET, SOCK_DGRAM) # AF_INET = IPV4 | SOCK_DGRAM = UDP
+skt.bind((my_ip, 5000))
 
-def send_in_segments(addressee_addr: str,  skt: socket.socket, data: str) -> None:
+def send():
+    global skt
+    
+    while True:
+        data = input("Enter data to send: ")
+        make_segments(addressee_ip, skt, data)
+
+def make_segments(addressee_addr: str,  skt: socket, data: str) -> None:
     global serial_number, ack
 
     for i in range(0, len(data), 1024):
         segment_data = data[i:i+1024]
         segment = f"{addressee_addr}|{serial_number}{segment_data}"
 
-        skt.sendto(segment.encode("utf-8"), (core_ip, 5000))
+        skt.sendto(segment.encode("utf-8"), (core_ip, 6000)) # todo change to 5000 port
 
         while True:
             sleep(1)
@@ -35,7 +41,7 @@ def send_in_segments(addressee_addr: str,  skt: socket.socket, data: str) -> Non
                     
                     break
                 else:
-                    skt.sendto(segment.encode("utf-8"), (core_ip, 5000))
+                    skt.sendto(segment.encode("utf-8"), (core_ip, 6000)) # todo change to 5000 port
 
         if serial_number == 0:
             serial_number = 1
@@ -47,26 +53,18 @@ def receive():
 
     while True:
         data, addr = skt.recvfrom(1024) # receive data and client address
-        
-        if data == "ack0" and serial_number == 0:
+        data = data.decode("utf-8")
+
+        if data == "ack0":
             with critical:
                 print("Received right ack")
                 ack = True
-        elif data == "ack1" and serial_number == 1:
+        elif data == "ack1":
             with critical:
                 print("Received rick ack")
                 ack = True
         else:
-            print("Received wrong ack. Pkg deleted")
-        
-        print(f"Received data: {data.decode()}")
-
-def send():
-    global skt
-    
-    while True:
-        data = input("Enter data to send: ")
-        send_in_segments(addressee_ip, skt, data)
+            print("error")
 
 Thread(target=receive).start()
 Thread(target=send).start()
