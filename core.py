@@ -24,11 +24,15 @@ def menu():
         print("5 - trocar ack")
         print("6 - Enviar ack qd ñ estiver escutando")
         print("7 - Mudar checksum")
+        print("8 - Send not a segment")
 
         temp = int(input("\nO que deseja fazer com o sequimento? "))
 
         if temp == 6:
-            skt.sendto("ack0".encode("utf-8"), (host, 5000))
+            skt.sendto("ack0".encode("utf-8"), (host, 5000)) # todo: change to 5000 port
+            opc = 1
+        elif temp == 8:
+            skt.sendto("not a segment".encode("utf-8"), (host, 7000)) # todo: change to 5000 port
             opc = 1
         else:
             opc = temp

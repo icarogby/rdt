@@ -29,7 +29,12 @@ def receive():
 
         print(f"Data receive: {data}\n") #* debug
 
-        check_sum, addressee_ip, serial_number_with_data = data.split("|") #? Change here
+        try:
+            check_sum, addressee_ip, serial_number_with_data = data.split("|") #? Change here
+        except:
+            print("Data receive is corrupted. Deleting this data.\n")
+            continue
+
         check_sum = int(check_sum)
 
         serial_number = int(serial_number_with_data[0])
