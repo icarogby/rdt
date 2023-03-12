@@ -16,16 +16,16 @@ def menu():
     global opc
 
     while True:
-        print("Estado atual:")
-        print("1 - Reenviar normalmente")
-        print("2 - Descartar pacote")
+        print(f"\nCurrent state: {opc}\n")
+        print("1 - Reenviar seguimento normalmente")
+        print("2 - Descartar sequimento")
         print("3 - Apagar ack")
         print("4 - Enviar ack com atraso")
-        print("5 - trocar ack") #? change here
+        print("5 - trocar ack")
         print("6 - Enviar ack qd ñ estiver escutando")
         print("7 - Mudar checksum")
 
-        temp = int(input("O que deseja fazer com o pacote: "))
+        temp = int(input("\nO que deseja fazer com o sequimento? "))
 
         if temp == 6:
             skt.sendto("ack0".encode("utf-8"), (host, 5000))
@@ -40,7 +40,7 @@ def core():
     while True:
         data, addr = skt.recvfrom(1024) # receive data and client address
 
-        print(f": Received data: {data.decode()}")
+        print(f"Received data: {data.decode()}")
 
         if data.decode("utf-8") == "ack0" or data.decode("utf-8") == "ack1":
             if opc == 1:
@@ -50,7 +50,7 @@ def core():
             elif opc == 3:
                 pass
             elif opc == 4:
-                sleep(2)
+                sleep(1.5)
                 skt.sendto(data, (host, 5000))
             elif opc == 5: #? change here
                 if data.decode("utf-8") == "ack0":
@@ -73,10 +73,11 @@ def core():
             elif opc == 7:
                 data = data.decode("utf-8")
 
-                checksum, resto = data.split("\\")
-                checksum = int(checksum) - 2345
-                data = f"{checksum}\{resto}"
-                print(data)
+                check_sum, addressee_ip, serial_number_with_data = data.split("|")
+                check_sum = int(check_sum) - 10
+                data = f"{check_sum}|{addressee_ip}|{serial_number_with_data}"
+                
+                print(f"New data: {data}")
 
                 skt.sendto(data.encode("utf-8"), (host, 7000))
 
