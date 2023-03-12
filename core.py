@@ -21,8 +21,16 @@ def menu():
         print("2 - Descartar pacote")
         print("3 - Apagar ack")
         print("4 - Enviar ack com atraso")
+        print("5 - trocar ack") #? change here
+        print("6 - Enviar ack qd ñ estiver escutando")
 
-        opc = int(input("O que deseja fazer com o pacote: "))
+        temp = int(input("O que deseja fazer com o pacote: "))
+
+        if temp == 6:
+            skt.sendto("ack0".encode("utf-8"), (host, 5000))
+            opc = 1
+        else:
+            opc = temp
     
 def core():
     global skt
@@ -41,6 +49,11 @@ def core():
             elif opc == 4:
                 sleep(2)
                 skt.sendto(data, (host, 5000))
+            elif opc == 5: #? change here
+                if data.decode("utf-8") == "ack0":
+                    skt.sendto("ack1".encode("utf-8"), (host, 5000))
+                else:
+                    skt.sendto("ack0".encode("utf-8"), (host, 5000))
             else:
                 print("Opção inválida")
         else:
@@ -51,6 +64,8 @@ def core():
             elif opc == 3:
                 skt.sendto(data, (host, 7000))
             elif opc == 4:
+                skt.sendto(data, (host, 7000))
+            elif opc == 5:
                 skt.sendto(data, (host, 7000))
 
         print(f": Received data: {data.decode()}")

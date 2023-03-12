@@ -3,10 +3,11 @@ from time import sleep
 from threading import Thread, Lock
 
 core_ip = gethostbyname(gethostname()) # todo change to input("Enter ip of network: ")
-my_ip = gethostbyname(gethostname()) # todo change to get a input or gambiarra
+my_ip = gethostbyname(gethostname()) # todo change to get a input 
 addressee_ip = input("Enter ip of addressee: ")
 
 serial_number = 0
+listening = False #? Change here
 
 critical = Lock()
 with critical:
@@ -16,14 +17,14 @@ skt = socket(AF_INET, SOCK_DGRAM) # AF_INET = IPV4 | SOCK_DGRAM = UDP
 skt.bind((my_ip, 5000))
 
 def send():
-    global skt
+    global skt, listening
     
     while True:
         data = input("Enter data to send: ")
         make_segments(addressee_ip, skt, data)
 
 def make_segments(addressee_addr: str,  skt: socket, data: str) -> None:
-    global serial_number, ack
+    global serial_number, ack, listening
 
     for i in range(0, len(data), 1024):
         segment_data = data[i:i+1024]
@@ -32,13 +33,13 @@ def make_segments(addressee_addr: str,  skt: socket, data: str) -> None:
         skt.sendto(segment.encode("utf-8"), (core_ip, 6000)) # todo change to 5000 port
 
         while True:
+            listening = True #? Change here
             sleep(1)
 
             with critical:
                 if ack:
-                    print("Received ack")
                     ack = False
-                    
+                    listening = False #? Change here
                     break
                 else:
                     skt.sendto(segment.encode("utf-8"), (core_ip, 6000)) # todo change to 5000 port
@@ -49,22 +50,24 @@ def make_segments(addressee_addr: str,  skt: socket, data: str) -> None:
             serial_number = 0
 
 def receive():
-    global skt, ack
+    global skt, ack, listening
 
     while True:
         data, addr = skt.recvfrom(1024) # receive data and client address
         data = data.decode("utf-8")
 
-        if data == "ack0":
-            with critical:
-                print("Received right ack")
-                ack = True
-        elif data == "ack1":
-            with critical:
-                print("Received rick ack")
-                ack = True
+        if not listening: #? Change here
+            print("Received data. Ignoring...")
         else:
-            print("error")
+            if data == "ack0" and serial_number == 0: #? change here
+                    print("Received right ack (0)")
+                    ack = True
+            elif data == "ack1" and serial_number == 1: #? change here
+                with critical:
+                    print("Received rick ack(1)")
+                    ack = True
+            else:
+                print("Received wrong ack. Ignoring...")
 
 Thread(target=receive).start()
 Thread(target=send).start()
