@@ -16,6 +16,10 @@ with critical:
 skt = socket(AF_INET, SOCK_DGRAM) # AF_INET = IPV4 | SOCK_DGRAM = UDP
 skt.bind((my_ip, 5000))
 
+def temporizador():
+    while Ture:
+        sleep(1)
+
 def send():
     global skt, listening
     
@@ -26,34 +30,34 @@ def send():
 def make_checksum(segment: str) -> int:
         sum = 0
 
-        print("\nCreating Checksum...\n")
-
         segment = bin(int.from_bytes(segment.encode("utf-8"), "big"))[2:] # convert string to binary
-        print(f"Segment in binary: {segment}")
-        
         size = len(segment)
 
         for i in range(0, size, 16):
-            print(f"part of 16bits: {segment[i: i+16]} | this same part as integer: {int(segment[i: i+16], 2)}")
             sum += int(segment[i: i+16], 2)
-
-        print(f"\nSum of all parts: {sum}")
-        print(f"Checksum of the segment: {~sum}")
 
         return ~sum
 
 def make_segments(addressee_ip: str,  skt: socket, data: str) -> None:
     global serial_number, ack, listening
 
-    for i in range(0, len(data), 1024):
-        segment_data = data[i:i+1024]
+    for i in range(0, len(data), 20):
+        segment_data = data[i:i+20]
+
+        # Making Header
         segment_without_checksum = f"{addressee_ip}|{serial_number}{segment_data}"
 
+        # Making checksum
         check_sum = make_checksum(segment_without_checksum) #? Change here
-
         segment = f"{check_sum}|{addressee_ip}|{serial_number}{segment_data}" #? Change here
 
-        print(f"\nSending this segment: {segment}\n")
+        # Making segment size
+        segment_size = len(segment) + 4 #? Change here
+        segment_size = str(segment_size).zfill(4)
+        segment = f"{segment_size}{check_sum}|{addressee_ip}|{serial_number}{segment_data}"
+
+        print(f"\nSending this segment:\n\tSeg size:{segment_size}\n\tChecksum: {check_sum}\n\tAddressee IP: {addressee_ip}\n\tSerial number: {serial_number}\n\tSegment data: {segment_data}\n")
+        
         skt.sendto(segment.encode("utf-8"), (core_ip, 6000)) # todo: change to 5000 port
 
         while True:

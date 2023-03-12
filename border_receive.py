@@ -8,6 +8,16 @@ skt.bind((my_ip, 7000)) # todo: change to 5000 port
 
 ack_number = 0
 
+msg = ""
+
+def show():
+    global msg
+
+    while True:
+        x = input("Press enter to show the hole message: ")
+        print(msg)
+
+
 def make_sum(segment: str) -> int:
     sum = 0
 
@@ -20,12 +30,21 @@ def make_sum(segment: str) -> int:
     return sum
 
 def receive():
-    global skt, ack_number
+    global skt, ack_number, msg
+    buffer = ""
 
     while True:
         print("Waiting for data...")
-        data, addr = skt.recvfrom(1024) # receive data and client address
-        data = data.decode("utf-8")
+        data_temp, addr = skt.recvfrom(1024) # receive data and client address
+
+        print(f"Temp data receive: {data_temp}\n") #* debug
+
+        data_temp = buffer + data_temp.decode("utf-8")
+
+        segment_size = int(data_temp[0:4]) #? Change here
+        data = data_temp[4:segment_size] #? Change here
+        buffer = data[segment_size:]
+        print(f"Buffer: {buffer}\n") #* debug
 
         print(f"Data receive: {data}\n") #* debug
 
@@ -48,6 +67,8 @@ def receive():
             if int(serial_number) == ack_number:
                 print("Received pkg with right serial number. Sending ack.")
                 print(f"Message: {serial_number_with_data[1:]}\n")
+                msg = msg + serial_number_with_data[1:]
+
                 skt.sendto(f"ack{ack_number}".encode("utf-8"), (my_ip, 6000)) # todo: change to 5000 port
 
                 if ack_number == 0:
@@ -60,4 +81,5 @@ def receive():
         else:
             print("Checksum fail! Not sending ack\n")
 
+Thread(target=show).start()
 Thread(target=receive).start()
