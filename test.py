@@ -1,7 +1,9 @@
-bb = "xxxxxxx"
-bb = bb.encode("utf-8")
+x = 45
 
-# convert bytes to binary
-x = bin(int.from_bytes(bb, "big"))[2:]
+# convert int to bytes
+x = x.to_bytes((x.bit_length() + 7) // 8, byteorder='big')
 
-print(f"x: {x}")
+# convert bytes to int
+x = int.from_bytes(x, byteorder='big')
+
+print(x)
