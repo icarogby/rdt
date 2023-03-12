@@ -30,17 +30,17 @@ def receive():
         
         print(data) #* debug
 
-        check_sum, data_no_cs = data.split("\\")
-        check_sum = int(check_sum)
+        check_sum, data_no_cs = data.split("_")
+        check_sum = int(check_sum) #? Change here
         ip, serial_number = data_no_cs.split("|")
 
         if int(serial_number[0]) == ack_number:
             skt.sendto(f"ack{ack_number}".encode("utf-8"), (my_ip, 6000))
 
-            sum = make_sum(data_no_cs)
+            sum = make_sum(data_no_cs) #? Change here
             print(f"sum: {sum} | check_sum: {check_sum} | sum + check_sum: {sum + check_sum}")
 
-            if (check_sum + sum) == -1:
+            if (check_sum + sum) == -1: #? Change here
                 print("no loose")
 
             if ack_number == 0:

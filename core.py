@@ -23,6 +23,7 @@ def menu():
         print("4 - Enviar ack com atraso")
         print("5 - trocar ack") #? change here
         print("6 - Enviar ack qd ñ estiver escutando")
+        print("7 - Mudar checksum")
 
         temp = int(input("O que deseja fazer com o pacote: "))
 
@@ -38,6 +39,8 @@ def core():
 
     while True:
         data, addr = skt.recvfrom(1024) # receive data and client address
+
+        print(f": Received data: {data.decode()}")
 
         if data.decode("utf-8") == "ack0" or data.decode("utf-8") == "ack1":
             if opc == 1:
@@ -67,8 +70,15 @@ def core():
                 skt.sendto(data, (host, 7000))
             elif opc == 5:
                 skt.sendto(data, (host, 7000))
+            elif opc == 7:
+                data = data.decode("utf-8")
 
-        print(f": Received data: {data.decode()}")
+                checksum, resto = data.split("\\")
+                checksum = int(checksum) - 2345
+                data = f"{checksum}\{resto}"
+                print(data)
+
+                skt.sendto(data.encode("utf-8"), (host, 7000))
 
 Thread(target=menu).start()
 Thread(target=core).start()
