@@ -23,12 +23,36 @@ def send():
         data = input("Enter data to send: ")
         make_segments(addressee_ip, skt, data)
 
+def make_checksum(segment: str) -> str:
+        sum = 0
+
+        segment = bin(int.from_bytes(segment.encode("utf-8"), "big"))[2:] # convert bytes to binary string
+
+        size = len(segment)
+
+        # 16 bits word
+        for i in range(0, size, 16):
+            print(f"See word: {segment[i: i+16]}")
+            sum += int(segment[i: i+16], 2)
+
+        check_sum = ~sum
+        temp = check_sum + sum
+
+        print(f"Soma: {sum}  .. Check sum: {check_sum} .. temp: {temp}")
+        print
+
+        return check_sum
+    
 def make_segments(addressee_addr: str,  skt: socket, data: str) -> None:
     global serial_number, ack, listening
 
     for i in range(0, len(data), 1024):
         segment_data = data[i:i+1024]
-        segment = f"{addressee_addr}|{serial_number}{segment_data}"
+        segment = f"|{addressee_addr}|{serial_number}{segment_data}"
+
+        check_sum = make_checksum(segment)
+
+        segment = f"{check_sum}|{addressee_addr}|{serial_number}{segment_data}"
 
         skt.sendto(segment.encode("utf-8"), (core_ip, 6000)) # todo change to 5000 port
 

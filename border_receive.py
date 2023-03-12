@@ -18,7 +18,7 @@ def receive():
         
         print(data) #* debug
 
-        ip, serial_number = data.split("|")
+        check, ip, serial_number = data.split("|")
 
         if int(serial_number[0]) == ack_number:
             skt.sendto(f"ack{ack_number}".encode("utf-8"), (my_ip, 6000))
