@@ -34,22 +34,23 @@ def receive():
     buffer = ""
 
     while True:
-        print("Waiting for data...")
+        print("\nWaiting for data...")
         data_temp, addr = skt.recvfrom(1024) # receive data and client address
-
-        print(f"Temp data receive: {data_temp}\n") #* debug
 
         data_temp = buffer + data_temp.decode("utf-8")
 
-        segment_size = int(data_temp[0:4]) #? Change here
-        data = data_temp[4:segment_size] #? Change here
-        buffer = data[segment_size:]
-        print(f"Buffer: {buffer}\n") #* debug
-
-        print(f"Data receive: {data}\n") #* debug
+        try:
+            segment_size = int(data_temp[0:4]) #? Change here
+            data = data_temp[4:segment_size] #? Change here
+            buffer = data[segment_size:]
+        except:
+            print("Data receive is corrupted. Deleting this data.\n")
+            continue
 
         try:
             check_sum, addressee_ip, serial_number_with_data = data.split("|") #? Change here
+
+            print(f"\nData receive:\n\tSegment size: {segment_size}\n\tcheck_sum: {check_sum}\n\taddressee_ip: {addressee_ip}\n\tSerial number: {serial_number_with_data[0]}\n\tData: {serial_number_with_data[1:]}\n")
         except:
             print("Data receive is corrupted. Deleting this data.\n")
             continue
@@ -66,7 +67,6 @@ def receive():
 
             if int(serial_number) == ack_number:
                 print("Received pkg with right serial number. Sending ack.")
-                print(f"Message: {serial_number_with_data[1:]}\n")
                 msg = msg + serial_number_with_data[1:]
 
                 skt.sendto(f"ack{ack_number}".encode("utf-8"), (my_ip, 6000)) # todo: change to 5000 port

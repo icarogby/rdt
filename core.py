@@ -78,7 +78,7 @@ def core():
                 data = data.decode("utf-8")
 
                 check_sum, addressee_ip, serial_number_with_data = data.split("|")
-                check_sum = int(check_sum) - 10
+                check_sum = int(check_sum[4:]) - 10
                 data = f"{check_sum}|{addressee_ip}|{serial_number_with_data}"
                 
                 print(f"New data: {data}")

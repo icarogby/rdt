@@ -1,5 +1,5 @@
 from socket import socket, AF_INET, SOCK_DGRAM, gethostbyname, gethostname
-from time import sleep
+from time import time
 from threading import Thread, Lock
 
 core_ip = gethostbyname(gethostname()) # todo: change to get a input
@@ -16,15 +16,11 @@ with critical:
 skt = socket(AF_INET, SOCK_DGRAM) # AF_INET = IPV4 | SOCK_DGRAM = UDP
 skt.bind((my_ip, 5000))
 
-def temporizador():
-    while Ture:
-        sleep(1)
-
 def send():
     global skt, listening
     
     while True:
-        data = input("Enter data to send: ")
+        data = input("\nEnter data to send: ")
         make_segments(addressee_ip, skt, data)
 
 def make_checksum(segment: str) -> int:
@@ -57,22 +53,25 @@ def make_segments(addressee_ip: str,  skt: socket, data: str) -> None:
         segment = f"{segment_size}{check_sum}|{addressee_ip}|{serial_number}{segment_data}"
 
         print(f"\nSending this segment:\n\tSeg size:{segment_size}\n\tChecksum: {check_sum}\n\tAddressee IP: {addressee_ip}\n\tSerial number: {serial_number}\n\tSegment data: {segment_data}\n")
-        
+        print("Waiting for right ack...")
+
         skt.sendto(segment.encode("utf-8"), (core_ip, 6000)) # todo: change to 5000 port
-
+        
+        start = time()
         while True:
-            print("Waiting for right ack...")
             listening = True #? Change here
-            sleep(1)
-
-            with critical:
-                if ack:
-                    ack = False
-                    listening = False #? Change here
-                    break
-                else:
-                    print("Timeout! Resending segment...")
-                    skt.sendto(segment.encode("utf-8"), (core_ip, 6000)) # todo: change to 5000 port
+            
+            end = time()
+            if end - start > 1:
+                print("Timeout! Resending segment...")
+                skt.sendto(segment.encode("utf-8"), (core_ip, 6000)) # todo: change to 5000 port
+                start = time()
+            else:
+                with critical:
+                    if ack:
+                        ack = False
+                        listening = False #? Change here
+                        break
 
         if serial_number == 0:
             serial_number = 1
