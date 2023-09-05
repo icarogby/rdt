@@ -17,7 +17,6 @@ def show():
         x = input("Press enter to show the hole message: ")
         print(msg)
 
-
 def make_sum(segment: str) -> int:
     sum = 0
 

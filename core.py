@@ -1,6 +1,11 @@
 import socket
 from threading import Thread
 from time import sleep
+from rdt import Sender
+
+x = Sender((23132, 12))
+
+x.send("oi")
 
 host = socket.gethostbyname(socket.gethostname())
 port = 6000 # todo change to 5000 port
