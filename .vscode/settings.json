@@ -19,5 +19,6 @@
         "**/Thumbs.db": true,
         ".vscode": true
     },
-    "explorerExclude.backup": {}
+    "explorerExclude.backup": {},
+    "python.analysis.typeCheckingMode": "basic"
 }
