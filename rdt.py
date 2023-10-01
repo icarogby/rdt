@@ -36,7 +36,7 @@ class Sender():
             
             segmentedData = bytes([self.serialNumber]) + segmentedData
 
-            segmentSize = len(segmentedData) + 2
+            segmentSize = len(segmentedData) + 2 + 1
             segmentedData = bytes([segmentSize]) + segmentedData
 
             # Calculating checksum.
@@ -48,6 +48,7 @@ class Sender():
             checkSum = ~sum
 
             checkSunInTwoBytes = bin(checkSum)[3:].zfill(16)
+            print(f"checkSum: {checkSum}") # todo: take out
             checkSunByte1 = checkSunInTwoBytes[0:8]
             checkSunByte2 = checkSunInTwoBytes[8:16]
             
@@ -55,6 +56,10 @@ class Sender():
 
             # Sending segment.
             self.skt.sendto(segmentedData, self.receiverAddress)
+            # for b in segmentedData:
+            #     print(f"{b} ")
+
+            # print("----------------")
             
             # Waiting for ack.
             self.isListening = True
@@ -84,26 +89,63 @@ class Sender():
 class Reciever():
     def __init__(self, receiverAddress: tuple):
         self.ack = 0
+        self.buffer = b""
 
         self.skt = socket(AF_INET, SOCK_DGRAM) # AF_INET = IPV4 | SOCK_DGRAM = UDP
         self.skt.bind(receiverAddress)
 
     def receive(self):
-        buffer = b""
+        receivedData, _ = self.skt.recvfrom(1024)
+        receivedData = self.buffer + receivedData
 
-        while True:
-            receivedData, _ = self.skt.recvfrom(1024)
-            receivedData = buffer + receivedData
+        for b in receivedData:
+            print(f"{b} ")
 
-            try:
-                segmentSize = receivedData[2]
-                segmentData = receivedData[3:segmentSize]
-                buffer = receivedData[segmentSize:]
-            except:
-                print("Data receive is corrupted. ignoring\n") # todo: to log
-                continue
-            
-            try:
-                checkSumByte1 = receivedData[0]
-                checkSumByte2 = receivedData[1]
-                checkSum = int(bin(checkSumByte1)[2:].zfill(8) + bin(checkSumByte2)[2:].zfill(8), 2)
+        print("----------------")
+
+        try:
+            checkSumByte1 = receivedData[0]
+            checkSumByte2 = receivedData[1]
+
+            segmentSize = receivedData[2]
+
+            serialNumber = receivedData[3]
+
+            segmentData = receivedData[4:segmentSize]
+
+            self.buffer = receivedData[segmentSize:]
+        except:
+            print("1. Data receive is corrupted. ignoring\n") # todo: to log
+            return None
+        
+        try:
+            checkSumByte1 = bin(checkSumByte1)[2:].zfill(8)
+            checkSumByte2 = bin(checkSumByte2)[2:].zfill(8)
+            checkSum = checkSumByte1 + checkSumByte2
+            print(f"checkSum: {checkSum}") # todo: to log
+            checkSum = int(checkSum, 2)
+
+            sum = 0
+
+            for byteInInt in receivedData[2:segmentSize]:
+                sum += byteInInt
+
+            print(sum)
+
+            if (sum - checkSum) == -1:
+                print(f"Received data: {segmentData}\n") # todo: to log
+
+                if self.ack == serialNumber:
+                    print("Sending ack...")
+                    self.skt.sendto(bytes([self.ack]), _)
+                    self.ack = 1 - self.ack
+                else:
+                    print("Received wrong segment. Ignoring...")
+            else:
+                print("Data receive is corrupted. ignoring\n")
+        except:
+            print("Data receive is corrupted. ignoring\n")
+            return None
+
+        return segmentData
+

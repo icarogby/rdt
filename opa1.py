@@ -1,7 +1,8 @@
 from rdt import Sender
 from socket import gethostbyname, gethostname
 
-x = Sender((gethostbyname(gethostname()), 5000), (gethostbyname(gethostname()), 5001))
+sender = Sender((gethostbyname(gethostname()), 5000), (gethostbyname(gethostname()), 7000))
 
 while True:
-    x.send(input("Enter data: ").encode("utf-8"))
+    msg = input("Type a message: ")
+    sender.send(msg.encode("utf-8"))

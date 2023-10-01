@@ -1,10 +1,13 @@
-from socket import gethostbyname, gethostname, socket, AF_INET, SOCK_DGRAM
+from rdt import Reciever
+from socket import gethostbyname, gethostname
 
-skt = socket(AF_INET, SOCK_DGRAM)
-skt.bind((gethostbyname(gethostname()), 5001))
+receiver = Reciever((gethostbyname(gethostname()), 7000))
 
 while True:
-    data, addr = skt.recvfrom(1024)
-    
-    data = data[4:]
-    print(data.decode("utf-8"))
+    msg = receiver.receive()
+
+    if msg == None:
+        continue
+    else:
+        print(msg)
+
