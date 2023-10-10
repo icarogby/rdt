@@ -1,7 +1,7 @@
-from rdt import Reciever
+from rdt import Receiver
 from socket import gethostbyname, gethostname
 
-receiver = Reciever((gethostbyname(gethostname()), 7000))
+receiver = Receiver((gethostbyname(gethostname()), 7000))
 
 while True:
     msg = receiver.receive()

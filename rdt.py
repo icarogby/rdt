@@ -4,12 +4,10 @@ from time import time
 
 # todo: add log
 
-TIME_OUT = 1
+TIME_OUT = 2
 
 class Sender():
-    def __init__(self, senderAddress: tuple, receiverAddress: tuple, log = False):
-        self.receiverAddress = receiverAddress
-
+    def __init__(self, senderAddress: tuple, log = False):
         self.serialNumber = 0
         self.isListening = False
         self.rightAck = False
@@ -30,7 +28,7 @@ class Sender():
                 else:
                     print("Received wrong ack. Ignoring...") # todo: take out
 
-    def send(self, dataInBytes: bytes):
+    def send(self, dataInBytes: bytes, receiverAddress: tuple):
         for i in range(0, len(dataInBytes), 16):
             segmentedData = dataInBytes[i:i+16]
             
@@ -55,7 +53,7 @@ class Sender():
             segmentedData = bytes([int(checkSunByte1, 2), int(checkSunByte2, 2)]) + segmentedData
 
             # Sending segment.
-            self.skt.sendto(segmentedData, self.receiverAddress)
+            self.skt.sendto(segmentedData, receiverAddress)
             # for b in segmentedData:
             #     print(f"{b} ")
 
@@ -72,7 +70,7 @@ class Sender():
                 if (end - start) > TIME_OUT:
                     print("Timeout! Resending segment...") # todo: take out
                     # Resending segment.
-                    self.skt.sendto(segmentedData, self.receiverAddress) # todo: change to 5000 port
+                    self.skt.sendto(segmentedData, receiverAddress) # todo: change to 5000 port
                     
                     start = time()
                 else:
@@ -86,7 +84,7 @@ class Sender():
             # Update serial number.
             self.serialNumber = 1 - self.serialNumber
 
-class Reciever():
+class Receiver():
     def __init__(self, receiverAddress: tuple):
         self.ack = 0
         self.buffer = b""
@@ -95,7 +93,7 @@ class Reciever():
         self.skt.bind(receiverAddress)
 
     def receive(self):
-        receivedData, _ = self.skt.recvfrom(1024)
+        receivedData, senderAddress = self.skt.recvfrom(1024)
         receivedData = self.buffer + receivedData
 
         for b in receivedData:
@@ -137,10 +135,11 @@ class Reciever():
 
                 if self.ack == serialNumber:
                     print("Sending ack...")
-                    self.skt.sendto(bytes([self.ack]), _)
+                    self.skt.sendto(bytes([self.ack]), senderAddress)
                     self.ack = 1 - self.ack
                 else:
                     print("Received wrong segment. Ignoring...")
+                    # todo: test self.skt.sendto(bytes([1 - self.ack]), senderAddress)
             else:
                 print("Data receive is corrupted. ignoring\n")
         except:
@@ -148,4 +147,3 @@ class Reciever():
             return None
 
         return segmentData
-
