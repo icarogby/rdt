@@ -1,8 +1,9 @@
 from socket import socket, AF_INET, SOCK_DGRAM
 from threading import Thread
 from time import time
+import logging
 
-# todo: add log
+logging.basicConfig(filename='rdt.log', filemode='w', level = 'DEBUG', format='%(name)s - %(levelname)s - %(message)s')
 
 TIME_OUT = 2
 
@@ -11,6 +12,7 @@ class Sender():
         self.serialNumber = 0
         self.isListening = False
         self.rightAck = False
+        self.log = log
 
         self.skt = socket(AF_INET, SOCK_DGRAM) # AF_INET = IPV4 | SOCK_DGRAM = UDP
         self.skt.bind(senderAddress)
@@ -26,7 +28,7 @@ class Sender():
                 if receivedAck == bytes([self.serialNumber]):
                     self.rightAck = True
                 else:
-                    print("Received wrong ack. Ignoring...") # todo: take out
+                    if self.log: logging.debug("Received wrong ack. Ignoring...") # todo: take out
 
     def send(self, dataInBytes: bytes, receiverAddress: tuple):
         for i in range(0, len(dataInBytes), 16):
@@ -46,7 +48,7 @@ class Sender():
             checkSum = ~sum
 
             checkSunInTwoBytes = bin(checkSum)[3:].zfill(16)
-            print(f"checkSum: {checkSum}") # todo: take out
+
             checkSunByte1 = checkSunInTwoBytes[0:8]
             checkSunByte2 = checkSunInTwoBytes[8:16]
             
@@ -54,10 +56,6 @@ class Sender():
 
             # Sending segment.
             self.skt.sendto(segmentedData, receiverAddress)
-            # for b in segmentedData:
-            #     print(f"{b} ")
-
-            # print("----------------")
             
             # Waiting for ack.
             self.isListening = True
@@ -68,14 +66,16 @@ class Sender():
                 end = time()
 
                 if (end - start) > TIME_OUT:
-                    print("Timeout! Resending segment...") # todo: take out
+                    if self.log: logging.debug("Timeout! Resending segment...")
+                    
                     # Resending segment.
-                    self.skt.sendto(segmentedData, receiverAddress) # todo: change to 5000 port
+                    self.skt.sendto(segmentedData, receiverAddress)
                     
                     start = time()
                 else:
                     if self.rightAck:
-                        print("Received ack. Moving on...") # todo: take out
+                        if self.log: logging.debug("Received ack. Moving on...")
+                        
                         self.rightAck = False
                         self.isListening = False
 
